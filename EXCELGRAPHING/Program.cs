@@ -47,23 +47,33 @@ var context = serviceProvider.GetRequiredService<DBContext>();
 
 
 
-// Retrieve data from the database
-var insuranceCompanies = context.InsuranceCompanies.ToList();
-//var providers = context.Providers.ToList();
-//var policyholders = context.Policyholders.ToList();
-//var bankAccounts = context.BankAccounts.ToList();
-//var banks = context.Banks.ToList();
+// Retrieve data
+//var insuranceCompanies = context.InsuranceCompanies.Select(IC => IC.Name).ToList();
 
+var receivables = context.ReceivablePayments
+    .Select(r => new
+    {
+        r.ReceivableAmount,
+        r.ReceivableDate
+        
+    });
 
-// Create a Format instance to add data to the Excel sheet
+var payables = context.PayablePayments
+    .Select(p => new
+    {
+        p.PayableAmount,
+        p.PayableDate
+    });
+
 var excelFilePath = "/Users/markbowen/Desktop/Applied System Documents/Metrics.xlsx";
 var format = new Format(excelFilePath);
 
 // Add data to the Excel sheet
-format.AddResultsToSheet(insuranceCompanies);
+//format.AddResultsToSheet(insuranceCompanies);
+format.AddResultsToSheet(payables, receivables, "CombinedPayments");
 
-
-
+// Create graph in the Excel sheet
+format.CreateGraph();
 
 
 #endregion
@@ -125,5 +135,27 @@ class Result
 }
 */
 
+#region SampleChart
+/*
+ var payablePayments = context.PayablePayments
+    .Select(pp => new { pp.PayableDate, pp.PayableAmount })
+    .ToList();
 
-/// Create new database table and model add connection extract and transform data
+var receivablePayments = context.ReceivablePayments
+    .Select(rp => new { rp.ReceivableDate, rp.ReceivableAmount })
+    .ToList();
+
+var excelFilePath = "/Users/markbowen/Desktop/Applied System Documents/Metrics.xlsx";
+var format = new Format(excelFilePath);
+
+// Add data to the Excel sheet
+format.AddResultsToSheet(payablePayments, "PayablePayments");
+format.AddResultsToSheet(receivablePayments, "ReceivablePayments");
+
+// Create graph in the Excel sheet
+format.CreateGraph();
+ 
+ */
+
+
+#endregion

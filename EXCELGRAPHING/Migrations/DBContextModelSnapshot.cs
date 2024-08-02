@@ -163,6 +163,37 @@ namespace EXCELGRAPHING.Migrations
                     b.ToTable("InsuranceCompanies", (string)null);
                 });
 
+            modelBuilder.Entity("EXCELGRAPHING.Models.PayablePayment", b =>
+                {
+                    b.Property<int>("PayablePaymentID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PayableAmount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<DateTime>("PayableDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("PaymentID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProviderID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("PayablePaymentID");
+
+                    b.HasIndex("PaymentID");
+
+                    b.HasIndex("ProviderID");
+
+                    b.ToTable("PayablePayments", (string)null);
+                });
+
             modelBuilder.Entity("EXCELGRAPHING.Models.Payment", b =>
                 {
                     b.Property<int>("PaymentID")
@@ -308,6 +339,37 @@ namespace EXCELGRAPHING.Migrations
                     b.ToTable("Providers", (string)null);
                 });
 
+            modelBuilder.Entity("EXCELGRAPHING.Models.ReceivablePayment", b =>
+                {
+                    b.Property<int>("ReceivablePaymentID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("BankID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentID")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ReceivableAmount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<DateTime>("ReceivableDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("ReceivablePaymentID");
+
+                    b.HasIndex("BankID");
+
+                    b.HasIndex("PaymentID");
+
+                    b.ToTable("ReceivablePayments", (string)null);
+                });
+
             modelBuilder.Entity("EXCELGRAPHING.Models.Transaction", b =>
                 {
                     b.Property<int>("TransactionID")
@@ -418,6 +480,25 @@ namespace EXCELGRAPHING.Migrations
                     b.Navigation("Provider");
                 });
 
+            modelBuilder.Entity("EXCELGRAPHING.Models.PayablePayment", b =>
+                {
+                    b.HasOne("EXCELGRAPHING.Models.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EXCELGRAPHING.Models.Provider", "Provider")
+                        .WithMany()
+                        .HasForeignKey("ProviderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("Provider");
+                });
+
             modelBuilder.Entity("EXCELGRAPHING.Models.Payment", b =>
                 {
                     b.HasOne("EXCELGRAPHING.Models.Claim", "Claim")
@@ -454,6 +535,25 @@ namespace EXCELGRAPHING.Migrations
                     b.Navigation("InsuranceCompany");
 
                     b.Navigation("Policyholder");
+                });
+
+            modelBuilder.Entity("EXCELGRAPHING.Models.ReceivablePayment", b =>
+                {
+                    b.HasOne("EXCELGRAPHING.Models.Bank", "Bank")
+                        .WithMany()
+                        .HasForeignKey("BankID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EXCELGRAPHING.Models.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bank");
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("EXCELGRAPHING.Models.Transaction", b =>
