@@ -18,8 +18,7 @@ public class Format
         _sheetName = sheetName;
 
     }
-
-               public void AddResultsToSheet<T1, T2>(IEnumerable<T1> results1, IEnumerable<T2> results2, string sheetName)
+        public void AddResultsToSheet<T1, T2>(IEnumerable<T1> results1, IEnumerable<T2> results2, string sheetName)
         {
             using (var package = new ExcelPackage(new FileInfo(_filePath)))
             {
@@ -59,7 +58,16 @@ public class Format
                 {
                     for (int col = 0; col < properties1.Length; col++)
                     {
-                        worksheet.Cells[row, col + 1].Value = properties1[col].GetValue(result);
+                        var value = properties1[col].GetValue(result);
+                        if (value is DateTime dateValue)
+                        {
+                            worksheet.Cells[row, col + 1].Value = dateValue;
+                            worksheet.Cells[row, col + 1].Style.Numberformat.Format = "yyyy-mm-dd";
+                        }
+                        else
+                        {
+                            worksheet.Cells[row, col + 1].Value = value;
+                        }
                     }
                     row++;
                 }
@@ -71,7 +79,16 @@ public class Format
                 {
                     for (int col = 0; col < properties2.Length; col++)
                     {
-                        worksheet.Cells[row, properties1.Length + col + 1].Value = properties2[col].GetValue(result);
+                        var value = properties2[col].GetValue(result);
+                        if (value is DateTime dateValue)
+                        {
+                            worksheet.Cells[row, properties1.Length + col + 1].Value = dateValue;
+                            worksheet.Cells[row, properties1.Length + col + 1].Style.Numberformat.Format = "yyyy-mm-dd";
+                        }
+                        else
+                        {
+                            worksheet.Cells[row, properties1.Length + col + 1].Value = value;
+                        }
                     }
                     row++;
                 }
@@ -87,8 +104,16 @@ public class Format
                 var workbook = package.Workbook;
                 var worksheet = workbook.Worksheets[_sheetName] ?? workbook.Worksheets.Add(_sheetName);
 
+                // Check if a chart with the given name already exists and remove it
+                var existingChart = worksheet.Drawings.FirstOrDefault(d => d.Name == "PaymentsChart") as ExcelChart;
+                if (existingChart != null)
+                {
+                    worksheet.Drawings.Remove(existingChart);
+                }
+
                 // Define the range of data to be used for the chart
                 var dataSheet = workbook.Worksheets["CombinedPayments"];
+                int lastRow = dataSheet.Dimension?.End.Row ?? 2; // Assuming at least one data row exists
 
                 // Create a new chart
                 var chart = worksheet.Drawings.AddChart("PaymentsChart", eChartType.Line) as ExcelLineChart;
@@ -97,12 +122,20 @@ public class Format
                 chart.Title.Text = "Payable vs Receivable Payments";
 
                 // Set data series for Payable Payments
-                var payableSeries = chart.Series.Add(dataSheet.Cells["B2:B6"], dataSheet.Cells["A2:A6"]);
+                var payableSeries = chart.Series.Add(dataSheet.Cells[$"A2:A{lastRow}"], dataSheet.Cells[$"B2:B{lastRow}"]);
                 payableSeries.Header = "Payable Amount";
 
                 // Set data series for Receivable Payments
-                var receivableSeries = chart.Series.Add(dataSheet.Cells["D2:D6"], dataSheet.Cells["C2:C6"]);
+                var receivableSeries = chart.Series.Add(dataSheet.Cells[$"C2:C{lastRow}"], dataSheet.Cells[$"D2:D{lastRow}"]);
                 receivableSeries.Header = "Receivable Amount";
+
+                // Set the X-axis as the date
+                chart.XAxis.Title.Text = "Date";
+                chart.YAxis.Title.Text = "Amount";
+
+                // Format the X-axis to display dates correctly
+                // Note: The NumberFormat property is not available for chart axes
+                // Ensure dates are written as DateTime values in the worksheet
 
                 // Set the position and size of the chart
                 chart.SetPosition(1, 0, 3, 0);
