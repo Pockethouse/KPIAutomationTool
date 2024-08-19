@@ -7,142 +7,158 @@ namespace EXCELGRAPHING;
 public class Format
 {
     private readonly string _filePath;
-    private readonly string _sheetName;
+    private readonly string _defaultSheetName;
 
-
-
-    public Format(string filePath, string sheetName = "Sheet1")
+    public Format(string filePath, string defaultSheetName = "Sheet1")
     {
-
         _filePath = filePath;
-        _sheetName = sheetName;
-
+        _defaultSheetName = defaultSheetName;
     }
-        public void AddResultsToSheet<T1, T2>(IEnumerable<T1> results1, IEnumerable<T2> results2, string sheetName)
+
+    // This method now includes ProductLineID in the Payables data
+    public void AddResultsToSheet<T1, T2>(
+        IEnumerable<T1> payables, 
+        IEnumerable<T2> productLines, 
+        string sheetName,
+        IDictionary<string, string> headers1 = null, 
+        IDictionary<string, string> headers2 = null)
+    {
+        using (var package = new ExcelPackage(new FileInfo(_filePath)))
         {
-            using (var package = new ExcelPackage(new FileInfo(_filePath)))
+            var worksheet = package.Workbook.Worksheets[sheetName] ?? package.Workbook.Worksheets.Add(sheetName);
+            var properties1 = typeof(T1).GetProperties()
+                                        .Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string))
+                                        .ToArray();
+
+            var properties2 = typeof(T2).GetProperties()
+                                        .Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string))
+                                        .ToArray();
+
+            int lastRow = worksheet.Dimension?.End.Row ?? 0;
+            int startRow = lastRow > 0 ? lastRow + 1 : 1;
+
+            // Add header row if not already present
+            if (startRow == 1)
             {
-                var worksheet = package.Workbook.Worksheets[sheetName] ?? package.Workbook.Worksheets.Add(sheetName);
-                var properties1 = typeof(T1).GetProperties()
-                                            .Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string))
-                                            .ToArray();
-
-                var properties2 = typeof(T2).GetProperties()
-                                            .Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string))
-                                            .ToArray();
-
-                // Determine the last row with data to append new data without overwriting
-                int lastRow = worksheet.Dimension?.End.Row ?? 0;
-                int startRow = lastRow > 0 ? lastRow + 1 : 1;
-
-                // Add header row if not already present
-                if (startRow == 1)
+                for (int i = 0; i < properties1.Length; i++)
                 {
-                    for (int i = 0; i < properties1.Length; i++)
-                    {
-                        worksheet.Cells[startRow, i + 1].Value = properties1[i].Name;
-                    }
-
-                    for (int i = 0; i < properties2.Length; i++)
-                    {
-                        worksheet.Cells[startRow, properties1.Length + i + 1].Value = properties2[i].Name;
-                    }
-
-                    startRow++;  // Move to the next row for data
+                    var header = headers1 != null && headers1.ContainsKey(properties1[i].Name)
+                        ? headers1[properties1[i].Name]
+                        : properties1[i].Name;
+                    worksheet.Cells[startRow, i + 1].Value = header;
                 }
 
-                int row = startRow;
-
-                // Add data rows for results1
-                foreach (var result in results1)
+                for (int i = 0; i < properties2.Length; i++)
                 {
-                    for (int col = 0; col < properties1.Length; col++)
-                    {
-                        var value = properties1[col].GetValue(result);
-                        if (value is DateTime dateValue)
-                        {
-                            worksheet.Cells[row, col + 1].Value = dateValue;
-                            worksheet.Cells[row, col + 1].Style.Numberformat.Format = "yyyy-mm-dd";
-                        }
-                        else
-                        {
-                            worksheet.Cells[row, col + 1].Value = value;
-                        }
-                    }
-                    row++;
+                    var header = headers2 != null && headers2.ContainsKey(properties2[i].Name)
+                        ? headers2[properties2[i].Name]
+                        : properties2[i].Name;
+                    worksheet.Cells[startRow, properties1.Length + i + 1].Value = header;
                 }
 
-                row = startRow;  // Reset row counter for results2
-
-                // Add data rows for results2
-                foreach (var result in results2)
-                {
-                    for (int col = 0; col < properties2.Length; col++)
-                    {
-                        var value = properties2[col].GetValue(result);
-                        if (value is DateTime dateValue)
-                        {
-                            worksheet.Cells[row, properties1.Length + col + 1].Value = dateValue;
-                            worksheet.Cells[row, properties1.Length + col + 1].Style.Numberformat.Format = "yyyy-mm-dd";
-                        }
-                        else
-                        {
-                            worksheet.Cells[row, properties1.Length + col + 1].Value = value;
-                        }
-                    }
-                    row++;
-                }
-
-                package.Save();
+                startRow++;
             }
+
+            int row = startRow;
+
+            // Add data rows for payables
+            foreach (var result in payables)
+            {
+                for (int col = 0; col < properties1.Length; col++)
+                {
+                    var value = properties1[col].GetValue(result);
+                    if (value is DateTime dateValue)
+                    {
+                        worksheet.Cells[row, col + 1].Value = dateValue;
+                        worksheet.Cells[row, col + 1].Style.Numberformat.Format = "yyyy-mm-dd";
+                    }
+                    else
+                    {
+                        worksheet.Cells[row, col + 1].Value = value;
+                    }
+                }
+                row++;
+            }
+
+            row = startRow;
+
+            // Add data rows for product lines
+            foreach (var result in productLines)
+            {
+                for (int col = 0; col < properties2.Length; col++)
+                {
+                    var value = properties2[col].GetValue(result);
+                    if (value is DateTime dateValue)
+                    {
+                        worksheet.Cells[row, properties1.Length + col + 1].Value = dateValue;
+                        worksheet.Cells[row, properties1.Length + col + 1].Style.Numberformat.Format = "yyyy-mm-dd";
+                    }
+                    else
+                    {
+                        worksheet.Cells[row, properties1.Length + col + 1].Value = value;
+                    }
+                }
+                row++;
+            }
+
+            package.Save();
+        }
+    }
+
+    // Updated to create chart based on ProductLineID
+ public void CreateGraphByProductLine(
+    string sheetName = null, 
+    string chartTitle = "Payable Payments by Product Line", 
+    string xAxisTitle = "Date", 
+    string yAxisTitle = "Amount ($)")
+{
+    using (var package = new ExcelPackage(new FileInfo(_filePath)))
+    {
+        var worksheet = package.Workbook.Worksheets[sheetName ?? _defaultSheetName];
+        int lastRow = worksheet.Dimension?.End.Row ?? 2;
+
+        // Remove existing chart if present
+        var existingChart = worksheet.Drawings.FirstOrDefault(d => d.Name == "PaymentsChart") as ExcelChart;
+        if (existingChart != null)
+        {
+            worksheet.Drawings.Remove(existingChart);
         }
 
-        public void CreateGraph()
+        // Create new chart
+        var chart = worksheet.Drawings.AddChart("PaymentsChart", eChartType.Line) as ExcelLineChart;
+
+        // Set chart titles
+        chart.Title.Text = chartTitle;
+        chart.XAxis.Title.Text = xAxisTitle;
+        chart.YAxis.Title.Text = yAxisTitle;
+
+        // Format X-axis to display dates correctly
+        chart.XAxis.Format = "yyyy-mm-dd";
+        chart.XAxis.CrossesAt = 0; // Ensures the X-axis starts at the bottom
+
+        // Group payments by product line and add series to chart
+        var productLineGroups = worksheet.Cells[2, 3, lastRow, 3].GroupBy(c => c.Text).ToList(); // Assumes product line names are in column 3
+
+        foreach (var group in productLineGroups)
         {
-            using (var package = new ExcelPackage(new FileInfo(_filePath)))
-            {
-                var workbook = package.Workbook;
-                var worksheet = workbook.Worksheets[_sheetName] ?? workbook.Worksheets.Add(_sheetName);
+            string productLineName = group.Key;
+            var firstCell = group.First().Start;
+            var lastCell = group.Last().Start;
 
-                // Check if a chart with the given name already exists and remove it
-                var existingChart = worksheet.Drawings.FirstOrDefault(d => d.Name == "PaymentsChart") as ExcelChart;
-                if (existingChart != null)
-                {
-                    worksheet.Drawings.Remove(existingChart);
-                }
+            var payableAmountRange = worksheet.Cells[firstCell.Row, 2, lastCell.Row, 2].Address; // Assumes payable amounts are in column 2
+            var payableDateRange = worksheet.Cells[firstCell.Row, 1, lastCell.Row, 1].Address; // Assumes payable dates are in column 1
 
-                // Define the range of data to be used for the chart
-                var dataSheet = workbook.Worksheets["CombinedPayments"];
-                int lastRow = dataSheet.Dimension?.End.Row ?? 2; // Assuming at least one data row exists
+            var series = chart.Series.Add(payableAmountRange, payableDateRange);
+            series.Header = productLineName;
+        }
 
-                // Create a new chart
-                var chart = worksheet.Drawings.AddChart("PaymentsChart", eChartType.Line) as ExcelLineChart;
+        // Set chart position and size
+        chart.SetPosition(1, 0, 3, 0);
+        chart.SetSize(800, 600);
 
-                // Set the title of the chart
-                chart.Title.Text = "Payable vs Receivable Payments";
+        package.Save();
+    }
 
-                // Set data series for Payable Payments
-                var payableSeries = chart.Series.Add(dataSheet.Cells[$"A2:A{lastRow}"], dataSheet.Cells[$"B2:B{lastRow}"]);
-                payableSeries.Header = "Payable Amount";
-
-                // Set data series for Receivable Payments
-                var receivableSeries = chart.Series.Add(dataSheet.Cells[$"C2:C{lastRow}"], dataSheet.Cells[$"D2:D{lastRow}"]);
-                receivableSeries.Header = "Receivable Amount";
-
-                // Set the X-axis as the date
-                chart.XAxis.Title.Text = "Date";
-                chart.YAxis.Title.Text = "Amount";
-
-                // Format the X-axis to display dates correctly
-                // Note: The NumberFormat property is not available for chart axes
-                // Ensure dates are written as DateTime values in the worksheet
-
-                // Set the position and size of the chart
-                chart.SetPosition(1, 0, 3, 0);
-                chart.SetSize(800, 600);
-
-                package.Save();
-            }
 
         #region Charts Added
 

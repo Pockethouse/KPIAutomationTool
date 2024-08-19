@@ -42,6 +42,13 @@ var context = serviceProvider.GetRequiredService<DBContext>();
 
 #endregion
 
+var productlines = context.ProductLines.ToList();
+
+foreach (var product in productlines)
+{
+    Console.WriteLine(product.Name);    
+}
+
 #region Excel Adding
 
 
@@ -50,31 +57,36 @@ var context = serviceProvider.GetRequiredService<DBContext>();
 // Retrieve data
 //var insuranceCompanies = context.InsuranceCompanies.Select(IC => IC.Name).ToList();
 
-var receivables = context.ReceivablePayments
-    .Select(r => new
-    {
-        r.ReceivableAmount,
-        r.ReceivableDate
-        
-    });
 
 var payables = context.PayablePayments
-    .Select(p => new
+    .Select(pp => new 
     {
-        p.PayableAmount,
-        p.PayableDate
-    });
+        pp.PayableDate, 
+        pp.PayableAmount, 
+        ProductLineName = pp.ProductLine.Name  // Accessing the Name property from ProductLine entity
+    })
+    .ToList();
 
 var excelFilePath = "/Users/markbowen/Desktop/Applied System Documents/Metrics.xlsx";
 var format = new Format(excelFilePath);
 
+var headers = new Dictionary<string, string> 
+{
+    { "PayableDate", "Payable Date" },
+    { "PayableAmount", "Payable Amount" },
+    { "ProductLine", "Product Line" }
+};
+
 // Add data to the Excel sheet
-//format.AddResultsToSheet(insuranceCompanies);
-format.AddResultsToSheet(payables, receivables, "CombinedPayments");
+format.AddResultsToSheet(payables, new List<object>(), "PayablesByProductLine", headers, null);
 
 // Create graph in the Excel sheet
-format.CreateGraph();
-
+format.CreateGraphByProductLine(
+    sheetName: "PayablesByProductLine", 
+    chartTitle: "Payable Payments by Product Line",
+    xAxisTitle: "Date",
+    yAxisTitle: "Amount ($)"
+);
 
 #endregion
 

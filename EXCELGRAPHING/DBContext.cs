@@ -21,6 +21,7 @@ using EXCELGRAPHING.Models;
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
         public DbSet<PayablePayment> PayablePayments { get; set; }
         public DbSet<ReceivablePayment> ReceivablePayments { get; set; }
+        public DbSet<ProductLine> ProductLines { get; set; }
 
 
         public DBContext(DbContextOptions<DBContext> options)
@@ -46,6 +47,7 @@ using EXCELGRAPHING.Models;
             modelBuilder.Entity<PaymentMethod>().ToTable("PaymentMethods");
             modelBuilder.Entity<PayablePayment>().ToTable("PayablePayments");
             modelBuilder.Entity<ReceivablePayment>().ToTable("ReceivablePayments");
+            modelBuilder.Entity<ProductLine>().ToTable("ProductLines");
             
 
             // Seed PaymentMethods
