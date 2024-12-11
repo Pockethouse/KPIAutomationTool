@@ -3,6 +3,7 @@ using System;
 using EXCELGRAPHING;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EXCELGRAPHING.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20240802044836_AddPayableAndReceivablePayments")]
+    partial class AddPayableAndReceivablePayments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -191,7 +194,7 @@ namespace EXCELGRAPHING.Migrations
 
                     b.HasIndex("ProviderID");
 
-                    b.ToTable("PayablePayments", (string)null);
+                    b.ToTable("PayablePayment", (string)null);
                 });
 
             modelBuilder.Entity("EXCELGRAPHING.Models.Payment", b =>
@@ -308,27 +311,6 @@ namespace EXCELGRAPHING.Migrations
                     b.ToTable("Policyholders", (string)null);
                 });
 
-            modelBuilder.Entity("EXCELGRAPHING.Models.ProductLine", b =>
-                {
-                    b.Property<int>("ProductLineID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("ProductLine");
-
-                    b.HasKey("ProductLineID");
-
-                    b.ToTable("ProductLines", (string)null);
-                });
-
             modelBuilder.Entity("EXCELGRAPHING.Models.Provider", b =>
                 {
                     b.Property<int>("ProviderID")
@@ -388,7 +370,7 @@ namespace EXCELGRAPHING.Migrations
 
                     b.HasIndex("PaymentID");
 
-                    b.ToTable("ReceivablePayments", (string)null);
+                    b.ToTable("ReceivablePayment", (string)null);
                 });
 
             modelBuilder.Entity("EXCELGRAPHING.Models.Transaction", b =>

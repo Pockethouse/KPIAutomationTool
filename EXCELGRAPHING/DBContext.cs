@@ -19,6 +19,10 @@ using EXCELGRAPHING.Models;
         public DbSet<Bank> Banks { get; set; }
         public DbSet<BankAccount> BankAccounts { get; set; }
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
+        public DbSet<PayablePayment> PayablePayments { get; set; }
+        public DbSet<ReceivablePayment> ReceivablePayments { get; set; }
+        public DbSet<ProductLine> ProductLines { get; set; }
+
 
         public DBContext(DbContextOptions<DBContext> options)
             : base(options)
@@ -41,6 +45,10 @@ using EXCELGRAPHING.Models;
             modelBuilder.Entity<Bank>().ToTable("Banks");
             modelBuilder.Entity<BankAccount>().ToTable("BankAccounts");
             modelBuilder.Entity<PaymentMethod>().ToTable("PaymentMethods");
+            modelBuilder.Entity<PayablePayment>().ToTable("PayablePayments");
+            modelBuilder.Entity<ReceivablePayment>().ToTable("ReceivablePayments");
+            modelBuilder.Entity<ProductLine>().ToTable("ProductLines");
+            
 
             // Seed PaymentMethods
            /* modelBuilder.Entity<PaymentMethod>().HasData(
